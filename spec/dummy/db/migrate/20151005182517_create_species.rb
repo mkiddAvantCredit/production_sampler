@@ -1,6 +1,6 @@
-class CreateFactions < ActiveRecord::Migration
+class CreateSpecies < ActiveRecord::Migration
   def change
-    create_table :factions do |t|
+    create_table :species do |t|
       t.string :name
 
       t.timestamps null: false
