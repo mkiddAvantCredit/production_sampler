@@ -11,29 +11,29 @@ module ProductionSampler
       @app_models = ActiveRecord::Base.descendants.map { |d| d.name }.sort
     end
 
-    def build_hashie(sample_model_spec)
-      if sample_model_spec.class != Hashie::Mash
+    def build_hashie(model_spec)
+      if model_spec.class != Hashie::Mash
         raise ProductionSamplerError.new('Value passed to build_hashie must be a Hashie::Mash')
       end
 
-       return extract_model(sample_model_spec)
+       return extract_model(model_spec)
     end
 
     private
 
-    def extract_model(sample_model_spec)
-      model_klass = sample_model_spec[:base_model]
+    def extract_model(model_spec)
+      model_klass = model_spec[:base_model]
 
       result = []
 
-      # If there's ids, grab the ID's, else grab all
-      model_items = sample_model_spec[:ids].present? ? model_klass.where(id: sample_model_spec[:ids]) : model_klass.none
+      # If no ID numbers are specified, then don't grab any. This is meant to just pull a sample, not a whole table.
+      model_items = model_spec[:ids].present? ? model_klass.where(id: model_spec[:ids]) : model_klass.none
 
       model_items.each do |model_object|
-        model_data = filtered_attributes(model_object.attributes, sample_model_spec[:columns])
+        model_data = filtered_attributes(model_object.attributes, model_spec)
 
-        if sample_model_spec[:associations].present?
-          sample_model_spec[:associations].each do |associated_model_spec|
+        if model_spec[:associations].present?
+          model_spec[:associations].each do |associated_model_spec|
             association_name = associated_model_spec[:association_name]
 
             associated_model_spec[:base_model] = model_object.send(association_name).klass
@@ -52,8 +52,14 @@ module ProductionSampler
 
     private
 
-    def filtered_attributes(attributes={}, columns=[])
-      Hashie::Mash.new(attributes.select { |k,v| columns.include? k.to_sym })
+    def filtered_attributes(attributes={}, spec)
+      if spec[:columns]
+        Hashie::Mash.new(attributes.select { |k,v| spec[:columns].include? k.to_sym })
+      elsif spec[:exclude_columns]
+        Hashie::Mash.new(attributes.reject { |k,v| spec[:exclude_columns].include? k.to_sym})
+      else
+        Hashie::Mash.new  # didn't whitelist or exclude any columns
+      end
     end
 
   end

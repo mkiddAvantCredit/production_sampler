@@ -19,7 +19,7 @@ describe ProductionSampler do
   end
 
   describe "#build_hashie" do
-    let(:association_paths) do
+    let(:model_spec) do
       Hashie::Mash.new(
       {
         base_model: Series,
@@ -69,8 +69,27 @@ describe ProductionSampler do
     end
 
     it 'extracts the expected models and data' do
-      result = ps.build_hashie(association_paths)
+      result = ps.build_hashie(model_spec)
       expect(result).to eql(expected_output)
+    end
+
+    context 'with exclude_columns list' do
+      let(:model_spec) do
+        Hashie::Mash.new(
+          {
+            base_model: Episode,
+            ids: [1],
+            exclude_columns: [:created_at, :updated_at],
+          }
+        )
+      end
+
+      it 'returns all columns except the excluded columns' do
+        result = ps.build_hashie(model_spec).first
+        expect(result[:created_at]).to be_falsey
+        expect(result[:updated_at]).to be_falsey
+        expect(result.size).to be > 0
+      end
     end
 
   end
