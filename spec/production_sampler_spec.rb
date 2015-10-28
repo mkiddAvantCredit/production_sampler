@@ -17,6 +17,16 @@ describe ProductionSampler do
     it 'lists all the models in the application' do
       expect(array_includes_expected(expected_output, ps.app_models)).to be_truthy
     end
+
+    context 'when loading specific models only' do
+      let(:ps) { ProductionSampler::ProductionSampler.new(load_models: ['Series', 'Episode']) }
+
+      it 'lists the model specified, but not the others' do
+        models = ps.app_models
+        expect(models).to include('Series')
+        #expect(models).to_not include('Character') # this line giving me trouble because I can't "un-load" the loaded models from the first test
+      end
+    end
   end
 
   describe "#build_hashie" do

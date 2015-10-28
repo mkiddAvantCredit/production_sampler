@@ -7,8 +7,14 @@ module ProductionSampler
   class ProductionSampler
     attr_accessor :app_models
 
-    def initialize
-      Rails.application.eager_load!
+    def initialize(load_models: nil)
+      if load_models.nil?
+        # load everything
+        Rails.application.eager_load!
+      else
+        # load only the specified models
+        load_models.each { |m| load_model(m) }
+      end
       @app_models = ActiveRecord::Base.descendants.map { |d| d.name }.sort
     end
 
@@ -51,8 +57,6 @@ module ProductionSampler
       return result
     end
 
-    private
-
     def filtered_attributes(object, spec)
       if spec[:columns]   # user specifies a whitelist
         attr = Hashie::Mash.new
@@ -65,6 +69,10 @@ module ProductionSampler
       else
         Hashie::Mash.new  # didn't whitelist or exclude any columns
       end
+    end
+
+    def load_model(model_name)
+      model_name.constantize.inspect
     end
 
   end
