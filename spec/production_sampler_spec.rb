@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'hashie'
+require 'money'
 
 describe ProductionSampler do
   let(:ps) { ProductionSampler::ProductionSampler.new }
@@ -28,7 +29,7 @@ describe ProductionSampler do
         associations: [
           {
           association_name: 'episodes',
-          columns: [:title],
+          columns: [:title, :cost],
           associations: [
             {
               association_name: 'characters',
@@ -49,6 +50,7 @@ describe ProductionSampler do
             episodes: [
               {
                 title: "The Squire of Gothos",
+                cost: Money.new(1995),
                 characters: [
                   {
                     name: "Trelane"
@@ -56,7 +58,8 @@ describe ProductionSampler do
                 ]
               },
               {
-                title: "Arena"
+                title: "Arena",
+                cost: nil
               }
             ]
           }
@@ -117,7 +120,8 @@ describe ProductionSampler do
       id: 1,
       title: "The Squire of Gothos",
       production_number: "1x17",
-      series_id: 1
+      series_id: 1,
+      cost: Money.new(1995)
     )
 
     Episode.create(

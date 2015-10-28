@@ -37,4 +37,6 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "activerecord", ">= 3.2"
   spec.add_runtime_dependency "activesupport", ">= 3.2"
   spec.add_runtime_dependency "hashie"
+  spec.add_runtime_dependency "monetize", ">= 1.0"
+  spec.add_runtime_dependency "money-rails", ">= 1.4.1"
 end
