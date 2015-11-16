@@ -39,6 +39,7 @@ describe ProductionSampler do
         associations: [
           {
           association_name: 'episodes',
+          scope: 'season_one',
           columns: [:title, :cost],
           associations: [
             {
@@ -142,7 +143,21 @@ describe ProductionSampler do
     )
 
     Episode.create(
-      id: 3,
+      id: 4,
+      title: "Amok Time",
+      production_number: "2x30",
+      series_id: 1
+    )
+
+    Episode.create(
+      id: 5,
+      title: "Who Mourns for Adonias?",
+      production_number: "2x31",
+      series_id: 1
+    )
+
+    Episode.create(
+      id: 6,
       title: "Encounter at Farpoint",
       production_number: "1x1",
       series_id: 2

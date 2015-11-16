@@ -30,11 +30,12 @@ module ProductionSampler
 
     def extract_model(model_spec)
       model_klass = model_spec[:base_model]
+      scoped_klass = model_spec[:scope] ? model_klass.send(model_spec[:scope]) : model_klass
 
       result = []
 
       # If no ID numbers are specified, then don't grab any. This is meant to just pull a sample, not a whole table.
-      model_objects = model_spec[:ids].present? ? model_klass.where(id: model_spec[:ids]) : model_klass.none
+      model_objects = model_spec[:ids].present? ? scoped_klass.where(id: model_spec[:ids]) : scoped_klass.none
 
       model_objects.each do |obj|
         model_data = filtered_attributes(obj, model_spec)
@@ -44,6 +45,7 @@ module ProductionSampler
             association_name = associated_model_spec[:association_name]
 
             associated_model_spec[:base_model] = obj.send(association_name).klass
+
             associated_model_spec[:ids] = obj.send(association_name).pluck(:id)
             if associated_model_spec[:ids].present?
               model_data[association_name] ||= []
