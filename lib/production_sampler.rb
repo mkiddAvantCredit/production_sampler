@@ -29,13 +29,16 @@ module ProductionSampler
     private
 
     def extract_model(model_spec)
-      model_klass = model_spec[:base_model]
-      scoped_klass = model_spec[:scope] ? model_klass.send(model_spec[:scope]) : model_klass
+      filtered_klass = model_spec[:base_model]
+      filtered_klass = filtered_klass.send(model_spec[:scope]) if model_spec[:scope]
+      if model_spec[:where]
+        filtered_klass = filtered_klass.where(model_spec[:where][:expression], *model_spec[:where][:parameters])
+      end
 
       result = []
 
       # If no ID numbers are specified, then don't grab any. This is meant to just pull a sample, not a whole table.
-      model_objects = model_spec[:ids].present? ? scoped_klass.where(id: model_spec[:ids]) : scoped_klass.none
+      model_objects = model_spec[:ids].present? ? filtered_klass.where(id: model_spec[:ids]) : filtered_klass.none
 
       model_objects.each do |obj|
         model_data = filtered_attributes(obj, model_spec)

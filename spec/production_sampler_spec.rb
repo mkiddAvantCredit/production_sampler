@@ -30,61 +30,64 @@ describe ProductionSampler do
   end
 
   describe "#build_hashie" do
-    let(:model_spec) do
-      Hashie::Mash.new(
-      {
-        base_model: Series,
-        ids: [1],
-        columns: [:id, :name],
-        associations: [
-          {
-          association_name: 'episodes',
-          scope: 'season_one',
-          columns: [:title, :cost],
-          associations: [
-            {
-              association_name: 'characters',
-              columns: [:name],
-            }
-          ]
-          },
-        ]
-      })
-    end
-
-    let (:expected_output) do
-      [
-        Hashie::Mash.new(
-          {
-            id: 1,
-            name: "Star Trek TOS",
-            episodes: [
-              {
-                title: "The Squire of Gothos",
-                cost: Money.new(1995),
-                characters: [
-                  {
-                    name: "Trelane"
-                  },
-                ]
-              },
-              {
-                title: "Arena",
-                cost: nil
-              }
-            ]
-          }
-        ),
-      ]
-    end
-
     before(:all) do
       generate_fixture_data
     end
 
-    it 'extracts the expected models and data' do
-      result = ps.build_hashie(model_spec)
-      expect(result).to eql(expected_output)
+    context "with a scope and a where condition" do
+      let(:model_spec) do
+        Hashie::Mash.new(
+          {
+            base_model: Series,
+            ids: [1],
+            columns: [:id, :name],
+            associations: [
+              {
+                association_name: 'episodes',
+                scope: 'season_one',
+                where: { expression: 'title NOT IN (?)', parameters: [["Return of the Archons", "Space Seed"]] }, # parameters must be an Array
+                columns: [:title, :cost],
+                associations: [
+                  {
+                    association_name: 'characters',
+                    columns: [:name],
+                  }
+                ]
+              },
+            ]
+          })
+      end
+
+      let (:expected_output) do
+        [
+          Hashie::Mash.new(
+            {
+              id: 1,
+              name: "Star Trek TOS",
+              episodes: [
+                {
+                  title: "The Squire of Gothos",
+                  cost: Money.new(1995),
+                  characters: [
+                    {
+                      name: "Trelane"
+                    },
+                  ]
+                },
+                {
+                  title: "Arena",
+                  cost: nil
+                }
+              ]
+            }
+          ),
+        ]
+      end
+
+      it 'extracts the expected models and data' do
+        result = ps.build_hashie(model_spec)
+        expect(result).to eql(expected_output)
+      end
     end
 
     context 'with exclude_columns list' do
@@ -143,21 +146,35 @@ describe ProductionSampler do
     )
 
     Episode.create(
+      id: 3,
+      title: "Return of the Archons",
+      production_number: "1x21",
+      series_id: 1
+    )
+
+    Episode.create(
       id: 4,
+      title: "Space Seed",
+      production_number: "1x22",
+      series_id: 1
+    )
+
+    Episode.create(
+      id: 5,
       title: "Amok Time",
       production_number: "2x30",
       series_id: 1
     )
 
     Episode.create(
-      id: 5,
+      id: 6,
       title: "Who Mourns for Adonias?",
       production_number: "2x31",
       series_id: 1
     )
 
     Episode.create(
-      id: 6,
+      id: 7,
       title: "Encounter at Farpoint",
       production_number: "1x1",
       series_id: 2
