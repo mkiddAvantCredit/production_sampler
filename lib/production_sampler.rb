@@ -45,7 +45,7 @@ module ProductionSampler
       base_model = model_spec[:base_model]
       if model_spec[:associations].present?
         model_spec[:associations].each do |associated_model_spec|
-          reflection = base_model.reflect_on_association(associated_model_spec[:association_name])
+          reflection = base_model.reflect_on_association(associated_model_spec[:association_name].to_sym)
           associated_model_spec[:base_model]       = reflection.klass
           associated_model_spec[:association_type] = reflection.macro
           if associated_model_spec[:association_type] == :has_many
@@ -178,10 +178,7 @@ module ProductionSampler
       all_records = ar_relation.where(key => ids).all
 
       all_records.each do |r|
-        existing_record = @preloaded_models[model_name].select { |pr| pr.id == r.id }
-        if existing_record
-          @preloaded_models[model_name].delete(existing_record)
-        end
+        @preloaded_models[model_name].delete_if { |pr| pr.id == r.id } # so that we don't have any duplicates
         @preloaded_models[model_name] << r
       end
     end
