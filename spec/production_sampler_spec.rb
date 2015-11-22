@@ -58,7 +58,7 @@ describe ProductionSampler do
           })
       end
 
-      let (:expected_output) do
+      let(:expected_output) do
         [
           Hashie::Mash.new(
             {
@@ -66,17 +66,21 @@ describe ProductionSampler do
               name: "Star Trek TOS",
               episodes: [
                 {
+                  id: 1,
                   title: "The Squire of Gothos",
                   cost: Money.new(1995),
                   characters: [
                     {
+                      id: 1,
                       name: "Trelane"
                     },
                   ]
                 },
                 {
+                  id: 2,
                   title: "Arena",
-                  cost: nil
+                  cost: nil,
+                  characters: [],
                 }
               ]
             }
