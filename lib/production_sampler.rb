@@ -15,7 +15,6 @@ module ProductionSampler
         # load only the specified models
         load_models.each { |m| load_model(m) }
       end
-      @preloaded_models = Hashie::Mash.new
       @app_models = ActiveRecord::Base.descendants.map { |d| d.name }.sort
     end
 
@@ -24,6 +23,7 @@ module ProductionSampler
         raise ProductionSamplerError.new('Value passed to build_hashie must be a Hashie::Mash')
       end
 
+      @preloaded_models = Hashie::Mash.new
       expand_spec_properties(model_spec)
       return extract_model(model_spec)
     end
