@@ -28,6 +28,12 @@ module ProductionSampler
       return extract_model(model_spec)
     end
 
+    def build_sql(model_spec)
+      hashie = build_hashie(model_spec)
+
+
+    end
+
     private
 
     def apply_filters_to_model(model_spec)
@@ -70,11 +76,7 @@ module ProductionSampler
         preload_model(model_spec, 'id', model_spec[:ids])
       end
 
-      # Apply any filters to the model; scope, where expressions, etc.
-      # klass_with_filters = apply_filters_to_model(model_spec)
-
       # Use the list of ID numbers to grab the preloaded ActiveRecord models for processing into a returned Hashie
-      #model_objects = klass_with_filters.where(id: model_spec[:ids])
       model_objects = find_preloaded_records_by_ids(model_spec[:base_model], model_spec[:ids])
       model_objects.each do |obj|
         model_data = filtered_attributes(obj, model_spec)
