@@ -31,7 +31,7 @@ module ProductionSampler
     def build_sql(model_spec)
       hashie = build_hashie(model_spec)
 
-
+      extract_sql_from_hashie(hashie, model_spec)
     end
 
     private
@@ -47,7 +47,7 @@ module ProductionSampler
 
     # Caches data we are going to need for querying a particular model in the spec hash
     def expand_spec_properties(model_spec)
-      model_spec[:columns] << :id unless model_spec[:exclude_columns].present? || model_spec[:columns].include?(:id)
+      model_spec[:columns].unshift(:id) unless model_spec[:exclude_columns].present? || model_spec[:columns].include?(:id)
       base_model = model_spec[:base_model]
       if model_spec[:associations].present?
         model_spec[:associations].each do |associated_model_spec|
@@ -93,7 +93,7 @@ module ProductionSampler
           result.each do |base_model_attributes|
             if association_type == :has_many
               foreign_key = associated_model_spec[:foreign_key]
-              associated_model_spec[:ids] = find_preloaded_records_by_key(associated_model_spec[:base_model], foreign_key, [base_model_attributes.id])
+              associated_model_spec[:ids] = find_preloaded_records_by_key(associated_model, foreign_key, [base_model_attributes.id])
                 .map { |pr| pr.id }
 
               if associated_model_spec[:ids].present?
@@ -112,6 +112,57 @@ module ProductionSampler
       end
 
       return result
+    end
+
+    # IMPORTANT: For this method to work, we are making the assumption that expand_spec_properties as already been
+    #            enacted on model_spec, per call from build_hashie
+    def extract_sql_from_hashie(hashie, model_spec)
+      # Build the SQL for the current level
+      sql_output = ''
+      base_model = model_spec[:base_model]
+      columns = model_spec[:columns]
+      associations = model_spec[:associations]
+
+      hashie.each do |model_data|
+        sql_output << build_sql_insert_statement(base_model.table_name, attributes_from_model_data(model_data))
+
+        next unless associations.present?
+        associations.each do |association|
+          sub_hashie = model_data.send(association[:association_name])
+          sql_output << extract_sql_from_hashie(sub_hashie, association)
+        end
+      end
+      sql_output
+    end
+
+    def attributes_from_model_data(hashie)
+      hashie.reject { |_k,v| v.is_a? Array }  # associations would be of type Array
+    end
+
+    # Builds the output INSERT SQL statements to build the data fixtures
+    def build_sql_insert_statement(table_name, attributes={})
+      return if attributes.empty?
+      "INSERT INTO #{table_name} (#{attributes.keys.join(',')}) VALUES (#{sql_safe(attributes.values).join(',')});\n"
+    end
+
+    # Takes an array of values, converts each one to a SQL-friendly text string
+    def sql_safe(values)
+      values.map do |val|
+        case val.class.to_s # I convert to string because for some reason if val.class is Fixnum, val.class === Fixnum == false
+          when "String", "ActiveSupport::TimeWithZone", "Date"
+            "'#{val}'"
+          when "Fixnum", "BigDecimal", "Float"
+            "#{val}"
+          when "FalseClass"
+            "false"
+          when "TrueClass"
+            "true"
+          when "NilClass"
+            "null"
+          else
+            raise Exception.new("Unknown SQL Type: #{val.class}")
+        end
+      end
     end
 
     def filtered_attributes(object, spec)

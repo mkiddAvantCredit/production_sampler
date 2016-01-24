@@ -143,9 +143,9 @@ describe ProductionSampler do
       let(:expected_output) do
         <<-SQL
 INSERT INTO series (id,name) VALUES (1,'Star Trek TOS');
-INSERT INTO episodes (id,title,cost_cents) VALUES (1,'The Squire of Gothos',1995)
-INSERT INTO characters (id,names) VALUES (1,'Trelane')
-INSERT INTO episodes (id,title,cost_cents) VALUES (2,'Arena',null)
+INSERT INTO episodes (id,title,cost_cents) VALUES (1,'The Squire of Gothos',1995);
+INSERT INTO characters (id,name) VALUES (1,'Trelane');
+INSERT INTO episodes (id,title,cost_cents) VALUES (2,'Arena',null);
         SQL
       end
 
