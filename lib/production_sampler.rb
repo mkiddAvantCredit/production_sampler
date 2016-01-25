@@ -148,19 +148,19 @@ module ProductionSampler
     # Takes an array of values, converts each one to a SQL-friendly text string
     def sql_safe(values)
       values.map do |val|
-        case val.class.to_s # I convert to string because for some reason if val.class is Fixnum, val.class === Fixnum == false
-          when "String", "ActiveSupport::TimeWithZone", "Date"
+        case val
+          when String, ActiveSupport::TimeWithZone, Date
             "'#{val}'"
-          when "Fixnum", "BigDecimal", "Float"
+          when Fixnum, BigDecimal, Float
             "#{val}"
-          when "FalseClass"
+          when FalseClass
             "false"
-          when "TrueClass"
+          when TrueClass
             "true"
-          when "NilClass"
+          when NilClass
             "null"
           else
-            raise Exception.new("Unknown SQL Type: #{val.class}")
+            raise ProductionSamplerError, "Unknown SQL Type: #{val.class}"
         end
       end
     end
