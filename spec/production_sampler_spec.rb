@@ -115,6 +115,48 @@ describe ProductionSampler do
 
   end
 
+  describe "#build_sql" do
+    context "with a scope and a where condition" do
+      let(:model_spec) do
+        Hashie::Mash.new(
+          {
+            base_model: Series,
+            ids: [1],
+            columns: [:id, :name],
+            associations: [
+              {
+                association_name: 'episodes',
+                scope: 'season_one',
+                where: { expression: 'title NOT IN (?)', parameters: [["Return of the Archons", "Space Seed"]] }, # parameters must be an Array
+                columns: [:title, :cost_cents],
+                associations: [
+                  {
+                    association_name: 'characters',
+                    columns: [:name],
+                  }
+                ]
+              },
+            ]
+          })
+      end
+
+      let(:expected_output) do
+        <<-SQL
+INSERT INTO series (id,name) VALUES (1,'Star Trek TOS');
+INSERT INTO episodes (id,title,cost_cents) VALUES (1,'The Squire of Gothos',1995);
+INSERT INTO characters (id,name) VALUES (1,'Trelane');
+INSERT INTO episodes (id,title,cost_cents) VALUES (2,'Arena',null);
+        SQL
+      end
+
+      it 'extracts the expected models and data' do
+        result = ps.build_sql(model_spec)
+        expect(result).to eql(expected_output)
+      end
+    end
+
+  end
+
   private
 
   def array_includes_expected(expectation, arr)
