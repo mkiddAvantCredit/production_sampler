@@ -1,3 +1,6 @@
+## Version 0.4.1
+* Internal refactor that better organizes the file structure. No change in functionality.
+
 ## Version 0.4.0
 * Added #build_sql feature for generating the SQL statements for importing data from production into a development db.
 
