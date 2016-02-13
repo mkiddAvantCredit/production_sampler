@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151027203833) do
+ActiveRecord::Schema.define(version: 20160211210557) do
 
   create_table "characters", force: :cascade do |t|
     t.string   "name"
@@ -28,6 +28,7 @@ ActiveRecord::Schema.define(version: 20151027203833) do
     t.datetime "created_at",        null: false
     t.datetime "updated_at",        null: false
     t.integer  "cost_cents"
+    t.string   "uuid"
   end
 
   create_table "series", force: :cascade do |t|
@@ -35,6 +36,14 @@ ActiveRecord::Schema.define(version: 20151027203833) do
     t.string   "year"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "ships", force: :cascade do |t|
+    t.string   "name"
+    t.string   "registry_number"
+    t.string   "episode_uuid"
+    t.datetime "created_at",      null: false
+    t.datetime "updated_at",      null: false
   end
 
   create_table "species", force: :cascade do |t|

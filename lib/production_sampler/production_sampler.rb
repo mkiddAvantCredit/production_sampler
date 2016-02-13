@@ -56,8 +56,12 @@ module ProductionSampler
           associated_model_spec[:base_model]       = reflection.klass
           associated_model_spec[:association_type] = reflection.macro
           if associated_model_spec[:association_type] == :has_many
-            associated_model_spec[:foreign_key]      = reflection.options[:foreign_key] ||
+
+            associated_model_spec[:foreign_key] ||=
+              reflection.options[:foreign_key] ||
               model_spec[:base_model].to_s.underscore << "_id"
+
+            associated_model_spec[:primary_key] = reflection.options[:primary_key] || :id
           end
 
           expand_spec_properties(associated_model_spec)
@@ -72,7 +76,7 @@ module ProductionSampler
       return result if model_spec[:ids].nil?
 
       # Preload any records not currently cached
-      # TODO consider replacing preload_includes? with find_preloaded_ids result validation so it only iterates once
+      # TODO Consider replacing preload_includes? with find_preloaded_ids result validation so it only iterates once.
       unless preload_includes?(model_spec[:base_model], model_spec[:ids])
         preload_model(model_spec, 'id', model_spec[:ids])
       end
@@ -86,7 +90,12 @@ module ProductionSampler
 
       if model_spec[:associations].present?
         model_spec[:associations].each do |associated_model_spec|
-          preload_association(base_model: model_spec[:base_model], base_model_objects: model_objects, association_spec: associated_model_spec)
+          preload_association(
+            base_model: model_spec[:base_model],
+            base_model_objects: model_objects,
+            association_spec: associated_model_spec,
+            base_primary_key: associated_model_spec[:primary_key]
+          )
           association_name = associated_model_spec[:association_name]
           associated_model = associated_model_spec[:base_model]
           association_type = associated_model_spec[:association_type]
@@ -94,7 +103,8 @@ module ProductionSampler
           result.each do |base_model_attributes|
             if association_type == :has_many
               foreign_key = associated_model_spec[:foreign_key]
-              associated_model_spec[:ids] = find_preloaded_records_by_key(associated_model, foreign_key, [base_model_attributes.id])
+              primary_key = associated_model_spec[:primary_key]
+              associated_model_spec[:ids] = find_preloaded_records_by_key(associated_model, foreign_key, [base_model_attributes.send(primary_key)])
                 .map { |pr| pr.id }
 
               if associated_model_spec[:ids].present?
@@ -102,13 +112,12 @@ module ProductionSampler
               else
                 base_model_attributes[association_name] = []
               end
+
+            elsif association_type == :belongs_to
+              # Not currently supported
+              fail ArgumentError, ":belongs_to associations not yet supported in the model spec"
             end
           end
-
-          # if base_model_attributes[association_name].present? #associated_model_spec[:ids].present?
-          #   #model_data[association_name] ||= []
-          #   model_data[association_name] = model_data[association_name] + (extract_model(associated_model_spec))
-          # end
         end
       end
 
@@ -153,18 +162,17 @@ module ProductionSampler
       model_name.constantize.inspect
     end
 
-    def preload_association(base_model: nil, base_model_objects: nil, association_spec: nil)
+    def preload_association(base_model: nil, base_model_objects: nil, association_spec: nil, base_primary_key: :id)
       unless base_model.present? && association_spec.present? && base_model_objects.present?
-        fail "Error preloading association: #{base_model}, #{association_spec}, #{base_model_objects}"
+        fail ArgumentError, "Error preloading association: #{base_model}, #{association_spec}, #{base_model_objects}"
       end
 
-      # Only has_many currently supported for preloading
       if association_spec[:association_type] == :has_many
-        ids = base_model_objects.map { |bm| bm.id }
+        ids = base_model_objects.map { |bm| bm.send(base_primary_key) }
         preload_model(association_spec, association_spec[:foreign_key], ids)
       elsif association_type==:belongs_to
+        # Only has_many currently supported for preloading
       end
-
     end
 
     def preload_includes?(model, ids)
@@ -183,19 +191,6 @@ module ProductionSampler
       all_records.each do |r|
         @preloaded_models[model_name].delete_if { |pr| pr.id == r.id } # so that we don't have any duplicates
         @preloaded_models[model_name] << r
-      end
-    end
-
-    # Loads the attributes for every table we need into memory so we only have to hit the DB with a few queries
-    def preload_models(model_spec)
-      if model_spec[:associations].present?
-        model_spec[:associations].each do |association|
-          if association[:association_type] == :has_many
-            preload_model(model, key, ids)
-          # elsif association[:association_type] == :belongs_to
-            # :belongs_to associations currently not supported
-          end
-        end
       end
     end
 
