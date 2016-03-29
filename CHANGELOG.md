@@ -1,3 +1,9 @@
+## Version 0.5.1
+* Zach Taylor pointed out an issue with table names. PR #4
+    - Some test suites define anonymous classes which inherit from ActiveRecord::Base. This ensures those classes name 
+    method, which responds as nil, are removed before sorting is attempted. Without this, an error is raised due to 
+    comparing some string with nil.
+
 ## Version 0.5.0
 * Add support for different primary key on the parent table in a one-to-many relationship/
 
