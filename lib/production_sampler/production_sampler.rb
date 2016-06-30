@@ -17,7 +17,7 @@ module ProductionSampler
         # load only the specified models
         load_models.each { |m| load_model(m) }
       end
-      @app_models = ActiveRecord::Base.descendants.compact.map { |d| d.name }.sort
+      @app_models = ActiveRecord::Base.descendants.map { |d| d.name }.compact.sort
     end
 
     def build_hashie(model_spec)
